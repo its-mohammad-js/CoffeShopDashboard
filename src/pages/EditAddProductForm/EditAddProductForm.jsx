@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { BiChevronDown } from "react-icons/bi";
+import { BiChevronDown, BiChevronLeft } from "react-icons/bi";
 import { FaPhotoFilm } from "react-icons/fa6";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductsData } from "../../App";
@@ -164,11 +164,22 @@ function EditAddProductForm() {
   }
 
   return (
-    <>
-      <form
-        onSubmit={handleSubmit(handleAddProduct)}
-        className="w-[500px] mx-auto py-12"
-      >
+    <div className="w-[500px] mx-auto py-4">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => navigate("/")}
+          className="text-3xl text-[#8d2f2d]"
+        >
+          <BiChevronLeft />
+        </button>
+
+        <h4 className="text-lg font-semibold text-[#8d2f2d]">
+          {isEdit ? "Add New" : "Edit"} Product
+        </h4>
+
+        <p></p>
+      </div>
+      <form onSubmit={handleSubmit(handleAddProduct)} className="py-12">
         {/* main form */}
         <div className="border-b space-y-4 border-gray-900/10">
           <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
@@ -432,7 +443,7 @@ function EditAddProductForm() {
           <p>Laoding...</p>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
