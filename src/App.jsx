@@ -1,6 +1,5 @@
 import { Route, Routes } from "react-router-dom";
 import HomePage from "./pages/home/HomePage";
-import Productinfo from "./pages/ProductInfo/Productinfo";
 import EditAddProductForm from "./pages/EditAddProductForm/EditAddProductForm";
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";

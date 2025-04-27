@@ -4,6 +4,9 @@ import { BiChevronDown } from "react-icons/bi";
 import { FaPhotoFilm } from "react-icons/fa6";
 import { useParams } from "react-router-dom";
 import { useProductsData } from "../../App";
+import { LoaderIcon } from "react-hot-toast";
+import { v4 as uuidv4 } from "uuid";
+import { supabase } from "../../../supabaseClient";
 
 const categories = [
   { value: "", label: "Select category" },
@@ -32,7 +35,9 @@ function EditAddProductForm() {
     formState: { errors },
   } = useForm();
   const [selectedImage, setSelectedImage] = useState(null);
+  const [isLoading, setLoading] = useState(false);
 
+  // set form values on edit mode
   useEffect(() => {
     if (params?.id && !loading && products?.length) {
       setEdit(true);
@@ -42,7 +47,13 @@ function EditAddProductForm() {
         if (k !== "category__en" && k !== "category__fa") {
           setValue(k, v);
         } else {
-          console.log(categories.find(({ value }) => value.includes(v)));
+          const category = categories.find(({ value }) =>
+            value.includes(v)
+          ).value;
+
+          setValue("category", category);
+          setValue("category__en", category.split("-")[0].replaceAll(" ", ""));
+          setValue("category__fa", category.split("-")[1].replace(" ", ""));
         }
       });
     }
@@ -50,13 +61,29 @@ function EditAddProductForm() {
 
   async function handleAddProduct(formData) {
     try {
-      console.log({
+      setLoading(true);
+
+      const picUrl = await uploadImageToSupabase(formData.coverPhoto);
+
+      const productData = {
         ...formData,
-        category__en: formData.category.split("-")[0].replace(" ", ""),
+        category__en: formData.category.split("-")[0].replaceAll(" ", ""),
         category__fa: formData.category.split("-")[1].replace(" ", ""),
-      });
+        thumbnailSrc: picUrl,
+        id: formData.id || uuidv4(),
+      };
+
+      const { category, coverPhoto, ...finalProductData } = productData;
+
+      const { data, error } = await supabase
+        .from("Products")
+        .insert([finalProductData]);
     } catch (error) {
-      setValue("category", v);
+      console.log(error);
+
+      // setValue("category", v);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -74,11 +101,52 @@ function EditAddProductForm() {
     setValue("coverPhoto", null, { shouldValidate: true });
   }
 
+  const uploadImageToSupabase = async (file) => {
+    if (!file) return { error: "No file provided" };
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${uuidv4()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from("productimages")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      const { data: signedUrlData, error: signedUrlError } =
+        await supabase.storage
+          .from("productimages")
+          .createSignedUrl(filePath, 31536000);
+
+      if (signedUrlError) {
+        throw signedUrlError;
+      }
+
+      return signedUrlData.signedUrl;
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  function onChangeCategory(e) {
+    const value = e.target.value;
+
+    setValue("category", value);
+  }
+
   return (
     <form
       onSubmit={handleSubmit(handleAddProduct)}
-      className="w-[500px] mx-auto py-16"
+      className="w-[500px] mx-auto"
     >
+      {/* main form */}
       <div className="border-b space-y-12 border-gray-900/10 pb-12">
         <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
           <div className="sm:col-span-3">
@@ -170,6 +238,8 @@ function EditAddProductForm() {
             <div className="mt-2 grid grid-cols-1 relative">
               <select
                 {...register("category", { required: "Category is required" })}
+                onSelect={onChangeCategory}
+                onChange={onChangeCategory}
                 id="category"
                 name="category"
                 className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-[#8d2f2d] sm:text-sm/6"
@@ -200,6 +270,7 @@ function EditAddProductForm() {
           >
             Cover photo
           </label>
+
           <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 relative">
             {selectedImage ? (
               <div className="flex flex-col items-center">
@@ -309,7 +380,7 @@ function EditAddProductForm() {
           </div>
         </div>
       </div>
-
+      {/* action btn's */}
       <div className="mt-6 flex items-center justify-end gap-x-6">
         <button type="button" className="text-sm/6 font-semibold text-gray-900">
           Cancel
@@ -320,6 +391,17 @@ function EditAddProductForm() {
         >
           Save
         </button>
+      </div>
+      {/* loading screen */}
+      <div
+        className={`${
+          isLoading ? "visible opacity-100" : "invisible opacity-0"
+        } absolute inset-0 h-screen flex items-center justify-center bg-gray-950/50 backdrop-blur-sm`}
+      >
+        <div className="px-12 py-2 bg-gray-200 rounded-md flex items-center gap-4 justify-center flex-col">
+          <LoaderIcon className="!size-12" />
+          <p>Laoding...</p>
+        </div>
       </div>
     </form>
   );
