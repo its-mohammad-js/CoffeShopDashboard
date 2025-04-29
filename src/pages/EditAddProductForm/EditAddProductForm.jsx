@@ -18,9 +18,9 @@ const categories = [
     value: "Cold Drinks - نوشیدنی‌های سرد",
     label: "Cold Drinks - نوشیدنی‌های سرد",
   },
-  { value: "Sandwiches - ساندویچ‌ها", label: "Sandwiches - ساندویچ‌ها" },
   { value: "Desserts - دسرها", label: "Desserts - دسرها" },
-  { value: "Sweets - شیرینی‌ها", label: "Sweets - شیرینی‌ها" },
+  { value: "accessory - اکسسوری", label: "accessory - اکسسوری" },
+  { value: "shakes - شیک ها", label: "shakes - شیک ها" },
 ];
 
 function EditAddProductForm() {
