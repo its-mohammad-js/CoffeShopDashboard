@@ -7,6 +7,7 @@ import { useProductsData } from "../../App";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "../../../supabaseClient";
+import { nanoid } from "nanoid";
 
 const categories = [
   { value: "", label: "Select category" },
@@ -76,26 +77,38 @@ function EditAddProductForm() {
     try {
       setLoading(true);
       const picUrl = await uploadImageToSupabase(formData.coverPhoto);
+
       const productData = {
-        ...formData,
-        category__en: formData.category.split("-")[0].trim(),
-        category__fa: formData.category.split("-")[1].trim(),
+        name: { en: formData.name__en, fa: formData.name__fa },
+        category: {
+          en: formData.category.split("-")[0].trim(),
+          fa: formData.category.split("-")[1].trim(),
+        },
+        desc: { en: formData.desc__en, fa: formData.desc__fa },
         thumbnailSrc: picUrl,
-        id: formData.id || uuidv4(),
+        price: formData.price,
+        productId: `prod-${nanoid()}`,
       };
-      const { category, coverPhoto, ...finalProductData } = productData;
 
       if (isEdit) {
-        await supabase
-          .from("Products")
-          .update(finalProductData)
-          .eq("id", formData.id);
+        // await supabase
+        //   .from("Products")
+        //   .update(finalProductData)
+        //   .eq("id", formData.id);
       } else {
-        await supabase.from("Products").insert([finalProductData]);
+        await fetch("https://theorycafe.ir/wp-json/custom/v1/add-product", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(productData),
+        })
+          .then((res) => res.json())
+          .then((data) => console.log("PRODUCT ADDED SUCCESFULLY", data));
       }
 
-      toast.success(`${isEdit ? "Product Edited" : "Product Added"}`);
-      navigate("/");
+      // toast.success(`${isEdit ? "Product Edited" : "Product Added"}`);
+      // navigate("/");
     } catch (error) {
       console.log(error);
     } finally {
@@ -127,31 +140,20 @@ function EditAddProductForm() {
     if (!file) return { error: "No file provided" };
 
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const formData = new FormData();
+      formData.append("image", file);
 
-      const { data, error } = await supabase.storage
-        .from("productimages")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
+      const res = await fetch(
+        "https://theorycafe.ir//wp-json/custom/v1/upload-image",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
-      if (error) {
-        throw error;
-      }
+      const data = await res.json();
 
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage
-          .from("productimages")
-          .createSignedUrl(filePath, 31536000);
-
-      if (signedUrlError) {
-        throw signedUrlError;
-      }
-
-      return signedUrlData.signedUrl;
+      return data.url;
     } catch (error) {
       return { error };
     }

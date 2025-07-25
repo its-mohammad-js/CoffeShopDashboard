@@ -20,13 +20,12 @@ function App() {
         throw new Error("No image URL provided");
       }
 
-      const url = new URL(imageUrl);
-      const pathParts = url.pathname.split("/");
-      const filePath = pathParts.slice(6).join("/");
-
-      const res = await supabase.storage
-        .from("productimages")
-        .remove([filePath]);
+      const res = await fetch(
+        `https://theorycafe.ir/wp-json/custom/v1/delete-image?attachmentId=${attachmentId}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       return { success: true };
     } catch (error) {
@@ -39,13 +38,14 @@ function App() {
     const getProducts = async () => {
       setProducts({ loadig: true, products: [] });
 
-      let { data: Products, error } = await supabase
-        .from("Products")
-        .select("*");
+      const res = await fetch(
+        "https://theorycafe.ir/wp-json/custom/v1/get-products"
+      );
+      const productsList = await res.json();
 
       setProducts({
         loadig: false,
-        products: Products,
+        products: productsList,
       });
     };
 

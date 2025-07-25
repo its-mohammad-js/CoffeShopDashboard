@@ -17,12 +17,18 @@ function ProductsList() {
       if (!selectedProduct) {
         setSelected(product);
       } else {
-        await deleteImage(selectedProduct.thumbnailSrc);
+        // await deleteImage(selectedProduct.thumbnailSrc);
 
-        const { error: dbError } = await supabase
-          .from("Products")
-          .delete()
-          .eq("id", selectedProduct.id);
+        await fetch("https://theorycafe.ir/wp-json/custom/v1/delete-product", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ productId: selectedProduct.product_id }),
+        })
+          .then((res) => res.json())
+          .then((data) => console.log("DELETE RESPONSE:", data))
+          .catch((err) => console.error("ERROR:", err));
 
         if (dbError) {
           throw new Error("Failed to delete product from database");
