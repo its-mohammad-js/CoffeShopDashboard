@@ -33,8 +33,15 @@ function App() {
           }),
         }
       );
-      const attachmentId = await attachmentRes.json();
 
+      const attachmentData = await attachmentRes.json();
+      const attachmentId = attachmentData.attachmentId;
+
+      if (!attachmentId) {
+        throw new Error("Attachment ID not found");
+      }
+
+      // delete image
       const deleteRes = await fetch(
         `https://theorycafe.ir/wp-json/custom/v1/delete-image?attachmentId=${attachmentId}`,
         {
@@ -42,10 +49,16 @@ function App() {
         }
       );
 
+      const deleteResult = await deleteRes.json();
+
+      if (!deleteRes.ok || !deleteResult.success) {
+        throw new Error(deleteResult.error || "Image deletion failed");
+      }
+
       return { success: true };
     } catch (error) {
       console.error("Error deleting image:", error.message);
-      return { error };
+      return { error: error.message };
     }
   };
 
