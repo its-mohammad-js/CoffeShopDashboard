@@ -20,7 +20,22 @@ function App() {
         throw new Error("No image URL provided");
       }
 
-      const res = await fetch(
+      // get attachment id
+      const attachmentRes = await fetch(
+        "https://theorycafe.ir/wp-json/custom/v1/get-attachment-id",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            imageUrl,
+          }),
+        }
+      );
+      const attachmentId = await attachmentRes.json();
+
+      const deleteRes = await fetch(
         `https://theorycafe.ir/wp-json/custom/v1/delete-image?attachmentId=${attachmentId}`,
         {
           method: "DELETE",
